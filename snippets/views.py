@@ -4,12 +4,28 @@ from __future__ import unicode_literals
 # from rest_framework import status
 # from rest_framework.views import APIView
 # from rest_framework.response import Response
+# from rest_framework import mixins
+# from django.http import Http404
 from snippets.models import Snippet
 from snippets.serializers import SnippetSerializer
-# from rest_framework import mixins
+from snippets.permissions import IsOwnerOrReadOnly
 from rest_framework import generics
+from rest_framework import permissions
+from django.contrib.auth.models import User
+from snippets.serializers import UserSerializer
 
-# from django.http import Http404
+
+class SnippetList(generics.ListCreateAPIView):
+    """
+    List all snippets, or create a new snippet
+    """
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 # @api_view(['GET', 'POST'])
 # def snippet_list(request, format=None):
@@ -28,13 +44,6 @@ from rest_framework import generics
 #             return Response(serializer.data, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class SnippetList(generics.ListCreateAPIView):
-    """
-    List all snippets, or create a new snippet
-    """
-
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
 
     # def get(self, request, *args, **kwargs):
     #     return self.list(request, *args, **kwargs)
@@ -53,6 +62,15 @@ class SnippetList(generics.ListCreateAPIView):
     #         serializer.save()
     #         return Response(serializer.data, status=status.HTTP_201CREATED)
     #     return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    retrieve, update, or delete a snippet instance
+    """
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly)
 
 
 # @api_view(['GET', 'PUT', 'DELETE'])
@@ -80,13 +98,7 @@ class SnippetList(generics.ListCreateAPIView):
 #         snippet.delete()
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
-    """
-    retrieve, update, or delete a snippet instance
-    """
 
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
 
     # def get(self, request, *args, **kwargs):
     #     return self.retrieve(request, *args, **kwargs)
@@ -121,6 +133,14 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     #     snippet = self.get_object(pk)
     #     snippet.delete()
     #     return Response(status=status.HTTP_204_NO_CONTENT)
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 
